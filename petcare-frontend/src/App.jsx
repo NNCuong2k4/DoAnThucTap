@@ -20,6 +20,7 @@ import OrderDetail from './pages/OrderDetail';
 import MyPets from './pages/Mypets';
 import AppointmentsList from './pages/Appointmentslist';
 import AppointmentsCreate from './pages/Appointmentscreate';
+import AppointmentDetail from './pages/Appointmentdetail'; // ← NEW: Appointment Detail
 import AdminPaymentVerification from './pages/AdminPaymentVerification';
 import PetDetail from './pages/PetDetail';
 
@@ -31,7 +32,7 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminAppointments from './pages/admin/AdminAppointments';
 import AdminPets from './pages/admin/AdminPets';
-import AdminBlog from './pages/admin/Adminblog';  // ← NEW: Admin Blog
+import AdminBlog from './pages/admin/Adminblog';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -131,7 +132,7 @@ function App() {
             }
           />
           
-          {/* ==================== BLOG ROUTES (NEW) ==================== */}
+          {/* ==================== BLOG ROUTES ==================== */}
           <Route
             path="/blog"
             element={
@@ -217,7 +218,7 @@ function App() {
             }
           />
           
-          {/* Pets */}
+          {/* ==================== PETS ROUTES ==================== */}
           <Route
             path="/pets"
             element={
@@ -227,9 +228,16 @@ function App() {
             }
           />
           
-          <Route path="/pets/:id" element={<PetDetail />} />
+          <Route
+            path="/pets/:id"
+            element={
+              <ProtectedRoute>
+                <PetDetail />
+              </ProtectedRoute>
+            }
+          />
           
-          {/* Appointments */}
+          {/* ==================== APPOINTMENTS ROUTES ==================== */}
           <Route
             path="/appointments"
             element={
@@ -239,11 +247,22 @@ function App() {
             }
           />
           
+          {/* IMPORTANT: Specific route BEFORE dynamic route! */}
           <Route
             path="/appointments/create"
             element={
               <ProtectedRoute>
                 <AppointmentsCreate />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* ← NEW: Appointment Detail Route */}
+          <Route
+            path="/appointments/:id"
+            element={
+              <ProtectedRoute>
+                <AppointmentDetail />
               </ProtectedRoute>
             }
           />
@@ -324,7 +343,6 @@ function App() {
             }
           />
           
-          {/* ==================== ADMIN BLOG ROUTE (NEW) ==================== */}
           <Route
             path="/admin/blog"
             element={

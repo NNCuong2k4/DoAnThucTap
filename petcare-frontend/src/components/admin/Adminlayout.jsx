@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import NotificationBell from '../../pages/Notificationbell';
 
 const AdminLayout = ({ children }) => {
   const location = useLocation();
@@ -10,7 +11,7 @@ const AdminLayout = ({ children }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // ✅ SIDEBAR MENU - UPDATED WITH BLOG
+  // ✅ SIDEBAR MENU - UPDATED WITH NOTIFICATIONS
   const menuItems = [
     {
       name: 'Quản lý',
@@ -68,6 +69,13 @@ const AdminLayout = ({ children }) => {
       label: 'Blog',
       description: 'Quản lý blog'
     },
+    {
+      name: 'Thông báo',
+      icon: '📢',
+      path: '/admin/notifications/send',
+      label: 'Gửi thông báo',
+      description: 'Gửi thông báo đến users'
+    },
   ];
 
   // Close dropdown when clicking outside
@@ -120,7 +128,7 @@ const AdminLayout = ({ children }) => {
         </div>
 
         {/* Menu Items */}
-        <nav className="flex-1 py-6 space-y-2 px-3">
+        <nav className="flex-1 py-6 space-y-2 px-3 overflow-y-auto">
           {menuItems.map((item) => (
             <Link
               key={item.path}
@@ -182,23 +190,8 @@ const AdminLayout = ({ children }) => {
 
             {/* Right Side: Notifications & User */}
             <div className="flex items-center gap-6">
-              {/* Notifications */}
-              <button className="relative p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <svg
-                  className="w-6 h-6 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                  />
-                </svg>
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
+              {/* ✅ NOTIFICATION BELL - INTEGRATED */}
+              <NotificationBell />
 
               {/* User Dropdown */}
               <div className="relative" ref={dropdownRef}>
@@ -257,7 +250,7 @@ const AdminLayout = ({ children }) => {
                       </div>
                     </div>
 
-                    {/* Quick Navigation - Khớp với Sidebar */}
+                    {/* Quick Navigation - Matches Sidebar */}
                     <div className="py-2">
                       <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         Quản lý nhanh
@@ -309,6 +302,19 @@ const AdminLayout = ({ children }) => {
                         <div>
                           <p className="text-sm font-medium text-gray-800">Cài đặt</p>
                           <p className="text-xs text-gray-500">Tùy chỉnh hệ thống</p>
+                        </div>
+                      </Link>
+
+                      {/* ✅ NOTIFICATIONS LINK - ADDED */}
+                      <Link
+                        to="/notifications"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="text-lg">🔔</span>
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">Thông báo của tôi</p>
+                          <p className="text-xs text-gray-500">Xem thông báo cá nhân</p>
                         </div>
                       </Link>
 

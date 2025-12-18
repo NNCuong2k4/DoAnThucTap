@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { cartAPI } from '../../services/api';
+import NotificationBell from '../../pages/Notificationbell';
 
 const Header = ({ user }) => {
   const navigate = useNavigate();
@@ -71,7 +72,7 @@ const Header = ({ user }) => {
 
   const navItems = [
     { name: 'Trang chủ', path: '/', icon: '🏠' },
-    { name: 'Cửa hàng', path: '/shop', icon: '🛍️' },  // ✅ Changed to /shop
+    { name: 'Cửa hàng', path: '/shop', icon: '🛍️' },
     { name: 'Đặt lịch', path: '/appointments', icon: '📅' },
     { name: 'Blog', path: '/blog', icon: '📝' },
   ];
@@ -154,27 +155,8 @@ const Header = ({ user }) => {
               )}
             </button>
 
-            {/* Notifications */}
-            <button 
-              className="relative p-2 hover:bg-purple-50 rounded-lg transition-colors"
-              aria-label="Thông báo"
-              title="Thông báo"
-            >
-              <svg
-                className="w-6 h-6 text-gray-700"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                />
-              </svg>
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
+            {/* ✅ NOTIFICATION BELL - INTEGRATED */}
+            {user && <NotificationBell />}
 
             {/* User Menu */}
             {user ? (
@@ -265,6 +247,20 @@ const Header = ({ user }) => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                         </svg>
                         <span className="text-gray-700">Thú cưng của tôi</span>
+                      </button>
+
+                      {/* ✅ NOTIFICATIONS LINK - ADDED */}
+                      <button
+                        onClick={() => {
+                          navigate('/notifications');
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-purple-50 transition-colors flex items-center gap-3"
+                      >
+                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <span className="text-gray-700">Thông báo</span>
                       </button>
                       
                       {/* Logout */}

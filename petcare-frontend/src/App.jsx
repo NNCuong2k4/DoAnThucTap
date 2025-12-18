@@ -20,9 +20,12 @@ import OrderDetail from './pages/OrderDetail';
 import MyPets from './pages/Mypets';
 import AppointmentsList from './pages/Appointmentslist';
 import AppointmentsCreate from './pages/Appointmentscreate';
-import AppointmentDetail from './pages/Appointmentdetail'; // ← NEW: Appointment Detail
+import AppointmentDetail from './pages/Appointmentdetail';
 import AdminPaymentVerification from './pages/AdminPaymentVerification';
 import PetDetail from './pages/PetDetail';
+
+// ✅ NOTIFICATIONS PAGES - ADDED
+import NotificationsPage from './pages/Notificationspage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -33,6 +36,9 @@ import AdminOrders from './pages/admin/AdminOrders';
 import AdminAppointments from './pages/admin/AdminAppointments';
 import AdminPets from './pages/admin/AdminPets';
 import AdminBlog from './pages/admin/Adminblog';
+
+// ✅ ADMIN NOTIFICATIONS - ADDED
+import AdminSendNotification from './pages/admin/Adminsendnotification';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -257,12 +263,21 @@ function App() {
             }
           />
           
-          {/* ← NEW: Appointment Detail Route */}
           <Route
             path="/appointments/:id"
             element={
               <ProtectedRoute>
                 <AppointmentDetail />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* ==================== NOTIFICATIONS ROUTES ✅ ADDED ==================== */}
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
               </ProtectedRoute>
             }
           />
@@ -348,6 +363,16 @@ function App() {
             element={
               <AdminRoute>
                 <AdminBlog />
+              </AdminRoute>
+            }
+          />
+          
+          {/* ==================== ADMIN NOTIFICATIONS ✅ ADDED ==================== */}
+          <Route
+            path="/admin/notifications/send"
+            element={
+              <AdminRoute>
+                <AdminSendNotification />
               </AdminRoute>
             }
           />

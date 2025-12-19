@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/Adminlayout';
 import { notificationsAPI } from '../../services/api';
-import { Send, Bell, Users, User } from 'lucide-react';
+import { Send, Bell, Users, User, Search, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const AdminSendNotification = () => {
   const [loading, setLoading] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [searchUser, setSearchUser] = useState('');
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [recipientType, setRecipientType] = useState('broadcast');
+  
   const [formData, setFormData] = useState({
-    userId: '', // Empty = broadcast
     type: 'general',
     title: '',
     message: '',
@@ -21,6 +28,56 @@ const AdminSendNotification = () => {
     { value: 'promotion', label: 'Khuyến mãi', icon: '🎁' },
     { value: 'general', label: 'Thông báo chung', icon: '📢' },
   ];
+
+  // ✅ FETCH USERS - USING WORKING METHOD (Direct fetch)
+  const fetchUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      
+      const response = await fetch('http://localhost:3000/api/admin/users', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const usersData = data.users || data.data || [];
+      const usersList = Array.isArray(usersData) ? usersData : [];
+      
+      setUsers(usersList);
+      setFilteredUsers(usersList);
+      
+      console.log('✅ Loaded', usersList.length, 'users');
+    } catch (error) {
+      console.error('❌ Error fetching users:', error);
+      toast.error('Không thể tải danh sách người dùng');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    if (searchUser.trim() === '') {
+      setFilteredUsers(users);
+    } else {
+      const searchLower = searchUser.toLowerCase();
+      const filtered = users.filter(
+        (user) =>
+          user.name?.toLowerCase().includes(searchLower) ||
+          user.email?.toLowerCase().includes(searchLower)
+      );
+      setFilteredUsers(filtered);
+    }
+  }, [searchUser, users]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,29 +96,30 @@ const AdminSendNotification = () => {
         message: formData.message.trim(),
       };
 
-      // Only add userId if targeting specific user
-      if (formData.userId && formData.userId.trim()) {
-        payload.userId = formData.userId.trim();
+      if (recipientType === 'specific' && selectedUser) {
+        payload.userId = selectedUser._id;
       }
 
       if (formData.actionUrl && formData.actionUrl.trim()) {
         payload.actionUrl = formData.actionUrl.trim();
       }
 
-      const response = await notificationsAPI.send(payload);
+      console.log('📤 Sending notification:', payload);
+      await notificationsAPI.send(payload);
 
       toast.success('Gửi thông báo thành công!');
 
-      // Reset form
       setFormData({
-        userId: '',
         type: 'general',
         title: '',
         message: '',
         actionUrl: '',
       });
+      setRecipientType('broadcast');
+      setSelectedUser(null);
+      setSearchUser('');
     } catch (error) {
-      console.error('Error sending notification:', error);
+      console.error('❌ Error sending notification:', error);
       toast.error(error.response?.data?.message || 'Gửi thông báo thất bại!');
     } finally {
       setLoading(false);
@@ -72,7 +130,16 @@ const AdminSendNotification = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Quick templates
+  const handleSelectUser = (user) => {
+    setSelectedUser(user);
+    setShowUserDropdown(false);
+    setSearchUser('');
+  };
+
+  const handleRemoveUser = () => {
+    setSelectedUser(null);
+  };
+
   const templates = [
     {
       title: 'Khuyến mãi đặc biệt',
@@ -126,9 +193,12 @@ const AdminSendNotification = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <button
                       type="button"
-                      onClick={() => handleChange('userId', '')}
+                      onClick={() => {
+                        setRecipientType('broadcast');
+                        setSelectedUser(null);
+                      }}
                       className={`p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                        !formData.userId
+                        recipientType === 'broadcast'
                           ? 'border-purple-500 bg-purple-50'
                           : 'border-gray-200 hover:border-purple-300'
                       }`}
@@ -142,9 +212,9 @@ const AdminSendNotification = () => {
 
                     <button
                       type="button"
-                      onClick={() => handleChange('userId', 'specific')}
+                      onClick={() => setRecipientType('specific')}
                       className={`p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${
-                        formData.userId
+                        recipientType === 'specific'
                           ? 'border-purple-500 bg-purple-50'
                           : 'border-gray-200 hover:border-purple-300'
                       }`}
@@ -152,19 +222,101 @@ const AdminSendNotification = () => {
                       <User size={24} className="text-purple-600" />
                       <div className="text-left">
                         <p className="font-semibold text-gray-800">Người dùng cụ thể</p>
-                        <p className="text-xs text-gray-500">Nhập User ID</p>
+                        <p className="text-xs text-gray-500">Chọn từ danh sách</p>
                       </div>
                     </button>
                   </div>
 
-                  {formData.userId && (
-                    <input
-                      type="text"
-                      value={formData.userId === 'specific' ? '' : formData.userId}
-                      onChange={(e) => handleChange('userId', e.target.value)}
-                      placeholder="Nhập User ID (MongoDB ObjectId)"
-                      className="mt-3 w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none"
-                    />
+                  {/* USER SELECTION DROPDOWN */}
+                  {recipientType === 'specific' && (
+                    <div className="mt-4">
+                      {selectedUser ? (
+                        <div className="flex items-center justify-between p-4 bg-purple-50 border-2 border-purple-200 rounded-xl">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold">
+                              {selectedUser.name?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-800">{selectedUser.name}</p>
+                              <p className="text-sm text-gray-600">{selectedUser.email}</p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleRemoveUser}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <X size={20} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={searchUser}
+                              onChange={(e) => setSearchUser(e.target.value)}
+                              onFocus={() => setShowUserDropdown(true)}
+                              placeholder="Tìm kiếm người dùng theo tên hoặc email..."
+                              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none"
+                            />
+                            <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                          </div>
+
+                          {showUserDropdown && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setShowUserDropdown(false)}
+                              />
+
+                              <div className="absolute z-20 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-xl max-h-80 overflow-y-auto">
+                                {loadingUsers ? (
+                                  <div className="flex items-center justify-center py-8">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                                  </div>
+                                ) : filteredUsers.length === 0 ? (
+                                  <div className="px-4 py-8 text-center">
+                                    <p className="text-gray-500 mb-2">
+                                      {searchUser ? 'Không tìm thấy người dùng' : 'Chưa có người dùng'}
+                                    </p>
+                                    {users.length === 0 && !searchUser && (
+                                      <button
+                                        type="button"
+                                        onClick={fetchUsers}
+                                        className="text-sm text-purple-600 hover:text-purple-700"
+                                      >
+                                        🔄 Thử tải lại
+                                      </button>
+                                    )}
+                                  </div>
+                                ) : (
+                                  filteredUsers.map((user) => (
+                                    <button
+                                      key={user._id}
+                                      type="button"
+                                      onClick={() => handleSelectUser(user)}
+                                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors border-b border-gray-100 last:border-0"
+                                    >
+                                      <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                                        {user.name?.charAt(0).toUpperCase() || 'U'}
+                                      </div>
+                                      <div className="flex-1 text-left">
+                                        <p className="font-semibold text-gray-800">{user.name}</p>
+                                        <p className="text-sm text-gray-600">{user.email}</p>
+                                      </div>
+                                      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+                                        {user.role}
+                                      </span>
+                                    </button>
+                                  ))
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -220,9 +372,7 @@ const AdminSendNotification = () => {
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none"
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    {formData.message.length} ký tự
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{formData.message.length} ký tự</p>
                 </div>
 
                 {/* Action URL */}
@@ -245,8 +395,8 @@ const AdminSendNotification = () => {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  disabled={loading || (recipientType === 'specific' && !selectedUser)}
+                  className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
                     <>
@@ -264,7 +414,7 @@ const AdminSendNotification = () => {
             </div>
           </div>
 
-          {/* Sidebar - Templates & Preview */}
+          {/* Sidebar */}
           <div className="space-y-6">
             {/* Preview */}
             <div className="bg-white rounded-2xl shadow-md p-6">
@@ -274,6 +424,19 @@ const AdminSendNotification = () => {
               </h3>
 
               <div className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
+                {recipientType === 'specific' && selectedUser && (
+                  <div className="mb-3 pb-3 border-b border-gray-300">
+                    <p className="text-xs text-gray-500 mb-1">Gửi đến:</p>
+                    <p className="text-sm font-semibold text-purple-600">{selectedUser.name}</p>
+                  </div>
+                )}
+                {recipientType === 'broadcast' && (
+                  <div className="mb-3 pb-3 border-b border-gray-300">
+                    <p className="text-xs text-gray-500 mb-1">Gửi đến:</p>
+                    <p className="text-sm font-semibold text-purple-600">Tất cả người dùng</p>
+                  </div>
+                )}
+
                 {formData.title || formData.message ? (
                   <>
                     <div className="flex items-start gap-3 mb-3">
@@ -321,6 +484,28 @@ const AdminSendNotification = () => {
                     <p className="text-xs text-gray-600 line-clamp-2">{template.message}</p>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="bg-white rounded-2xl shadow-md p-6">
+              <h3 className="font-bold text-gray-800 mb-4">Thống kê</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Tổng người dùng</span>
+                  <span className="font-bold text-gray-800">{users.length}</span>
+                </div>
+                {recipientType === 'specific' ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Người nhận</span>
+                    <span className="font-bold text-purple-600">1 người</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Người nhận</span>
+                    <span className="font-bold text-purple-600">{users.length} người</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
